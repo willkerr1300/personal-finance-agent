@@ -55,6 +55,7 @@ Edit `.env.local` and fill in:
 Then start the dev server:
 
 ```bash
+npm install
 npm run dev
 ```
 
@@ -62,9 +63,11 @@ npm run dev
 
 ## 3. Backend
 
+Use **Python 3.12** (required for `psycopg2-binary` wheels). Python 3.14 is not yet supported by some dependencies.
+
 ```bash
 cd backend
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
