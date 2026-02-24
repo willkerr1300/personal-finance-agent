@@ -76,11 +76,11 @@ cp .env.example .env
 
 Edit `.env` and fill in:
 
-| Variable | How to generate |
-|---|---|
-| `DATABASE_URL` | Already set for local Docker |
-| `INTERNAL_API_KEY` | Same value you set in the frontend `.env.local` |
-| `ENCRYPTION_KEY` | Run `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
+| Variable | How to generate | Who sets it |
+|---|---|---|
+| `DATABASE_URL` | Already set for local Docker | Same for everyone when using local Docker |
+| `INTERNAL_API_KEY` | Same value you set in the frontend `.env.local` | Agree as a team (must match frontend) or each dev sets the same value in both frontend and backend |
+| `ENCRYPTION_KEY` | Run `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` | **Each developer** for local dev; use a shared key only if you share one dev database and need to read the same encrypted data |
 
 Run the migration to create the database tables:
 
@@ -93,6 +93,8 @@ Start the API server:
 ```bash
 uvicorn app.main:app --reload
 ```
+
+**If `pip install` fails on `psycopg2-binary` with "pg_config executable not found":** you are likely using Python 3.14 (or another version without pre-built wheels). Use Python 3.12: install it (e.g. `brew install python@3.12`), then create the venv with `python3.12 -m venv .venv`.
 
 ---
 
