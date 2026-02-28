@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.database import get_db
-from app.models import User, Trip, Booking, AgentLog
+from app.models import User, Trip, Booking, AgentLog, TripAlert
 from app.auth import require_internal_key, get_current_user_email
 from app.services.trip_parser import parse_trip_request
 from app.services.amadeus import search_flights, search_hotels, search_activities
@@ -54,6 +54,19 @@ class BookOut(BaseModel):
     trip_id: str
     status: str
     bookings: list[dict]
+
+
+class AlertOut(BaseModel):
+    id: str
+    alert_type: str
+    message: str
+    details: Optional[dict] = None
+    is_read: bool
+    created_at: str
+
+
+class ModifyIn(BaseModel):
+    request: str  # plain-English: "extend my hotel by 2 nights"
 
 
 # ---------------------------------------------------------------------------
@@ -415,3 +428,102 @@ def get_confirmation(
 
     bookings = db.query(Booking).filter(Booking.trip_id == trip_id).all()
     return build_confirmation(trip, bookings)
+
+
+# ---------------------------------------------------------------------------
+# Trip alerts (schedule changes, price drops)
+# ---------------------------------------------------------------------------
+
+@router.get("/{trip_id}/alerts", response_model=list[AlertOut])
+def list_alerts(
+    trip_id: str,
+    email: str = Depends(get_current_user_email),
+    _key: str = Depends(require_internal_key),
+    db: Session = Depends(get_db),
+):
+    """Return all monitoring alerts for a confirmed trip, newest first."""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
+    if not trip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    alerts = (
+        db.query(TripAlert)
+        .filter(TripAlert.trip_id == trip_id)
+        .order_by(TripAlert.created_at.desc())
+        .all()
+    )
+    return [
+        AlertOut(
+            id=str(a.id),
+            alert_type=a.alert_type,
+            message=a.message,
+            details=a.details,
+            is_read=a.is_read,
+            created_at=a.created_at.isoformat(),
+        )
+        for a in alerts
+    ]
+
+
+@router.post("/{trip_id}/alerts/{alert_id}/read", status_code=status.HTTP_204_NO_CONTENT)
+def mark_alert_read(
+    trip_id: str,
+    alert_id: str,
+    email: str = Depends(get_current_user_email),
+    _key: str = Depends(require_internal_key),
+    db: Session = Depends(get_db),
+):
+    """Mark a single alert as read."""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
+    if not trip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+    alert = db.query(TripAlert).filter(TripAlert.id == alert_id, TripAlert.trip_id == trip_id).first()
+    if not alert:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+    alert.is_read = True
+    db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Trip modification
+# ---------------------------------------------------------------------------
+
+@router.post("/{trip_id}/modify")
+async def modify_trip(
+    trip_id: str,
+    data: ModifyIn,
+    email: str = Depends(get_current_user_email),
+    _key: str = Depends(require_internal_key),
+    db: Session = Depends(get_db),
+):
+    """
+    Apply a natural-language modification to a confirmed trip.
+
+    Examples:
+      - "extend my hotel by 2 nights"
+      - "upgrade to business class"
+      - "upgrade my room to a suite"
+    """
+    from app.services.modification import apply_modification
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
+    if not trip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+    if trip.status not in ("confirmed", "booking_failed"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Modifications are only allowed on confirmed trips (current status: {trip.status})",
+        )
+
+    bookings = db.query(Booking).filter(Booking.trip_id == trip_id).all()
+    result = await apply_modification(trip, bookings, data.request, db)
+    return result

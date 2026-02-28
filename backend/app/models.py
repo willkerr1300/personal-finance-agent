@@ -62,6 +62,8 @@ class Trip(Base):
 
     user = relationship("User", back_populates="trips")
     bookings = relationship("Booking", back_populates="trip", cascade="all, delete-orphan")
+    alerts = relationship("TripAlert", back_populates="trip", cascade="all, delete-orphan",
+                          order_by="TripAlert.created_at.desc()")
 
 
 class Booking(Base):
@@ -109,3 +111,21 @@ class AgentLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     booking = relationship("Booking", back_populates="agent_logs")
+
+
+class TripAlert(Base):
+    """Schedule change or price-drop alert for a confirmed trip."""
+    __tablename__ = "trip_alerts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    trip_id = Column(UUID(as_uuid=True), ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # "schedule_change" | "price_drop" | "cancellation"
+    alert_type = Column(String(50), nullable=False)
+    message = Column(Text, nullable=False)
+    details = Column(JSON, nullable=True)
+    is_read = Column(Boolean, nullable=False, default=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    trip = relationship("Trip", back_populates="alerts")

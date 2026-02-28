@@ -160,13 +160,14 @@ export function BookingStatus({ tripId, initialStatus }: Props) {
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className="text-base font-semibold text-zinc-900 mb-1">Ready to book</h2>
         <p className="text-sm text-zinc-500 mb-5">
-          The agent will open United.com and Marriott.com and complete the booking using
-          your saved profile and a single-use virtual card.
+          The agent will navigate to the airline and hotel sites and complete your
+          bookings using your saved profile and a single-use virtual card.
           Make sure your{" "}
           <Link href="/profile" className="underline underline-offset-2 hover:text-zinc-900">
             profile
           </Link>{" "}
           has your first name, last name, and any loyalty numbers filled in.
+          Supported carriers: United, Delta, American, Southwest.
         </p>
         {bookError && (
           <p className="text-sm text-red-600 mb-3">{bookError}</p>

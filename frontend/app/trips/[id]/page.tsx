@@ -4,6 +4,8 @@ import Link from "next/link"
 import { SignOutButton } from "@/components/SignOutButton"
 import { ItineraryCard } from "@/components/ItineraryCard"
 import { BookingStatus } from "@/components/BookingStatus"
+import { TripAlerts } from "@/components/TripAlerts"
+import { ModifyTrip } from "@/components/ModifyTrip"
 
 interface ParsedSpec {
   origin?: string
@@ -179,6 +181,14 @@ export default async function TripPage({
         {/* Booking panel — shown after approval */}
         {showBookingPanel && (
           <BookingStatus tripId={trip.id} initialStatus={trip.status} />
+        )}
+
+        {/* Alerts + modification — shown only for confirmed trips */}
+        {trip.status === "confirmed" && (
+          <div className="mt-6 space-y-4">
+            <TripAlerts tripId={trip.id} />
+            <ModifyTrip tripId={trip.id} />
+          </div>
         )}
       </main>
     </div>
