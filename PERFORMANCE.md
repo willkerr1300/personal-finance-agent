@@ -109,27 +109,6 @@ n=20 per type.
 
 ---
 
-## Resume Entry
-
----
-
-**AI-Powered Travel Booking Agent** | Python, FastAPI, Next.js, PostgreSQL, Claude Sonnet 4.6, Playwright, Celery, Redis, Stripe
-
-*Personal project — full-stack autonomous booking system (12 weeks)*
-
-- Built an end-to-end AI agent that accepts plain-English trip requests, searches real flight and hotel inventory via the Amadeus API, and autonomously completes bookings on airline and hotel websites using Playwright browser automation and Claude Sonnet 4.6's vision API — eliminating the need for users to navigate multiple booking sites or re-enter traveler details
-- Engineered a vision-based browser agent using Claude Sonnet 4.6 multimodal API to interpret live website screenshots and determine next actions (click, type, scroll), replacing brittle CSS selector scraping; supports United, Delta, American, and Southwest for flights and Expedia for hotels
-- Designed an async booking architecture with Celery + Redis delivering HTTP 202 Accepted in under 20 ms while booking tasks execute in the background; frontend polls for live status at 3-second intervals, displaying a step-by-step agent action timeline
-- Implemented rule-based trip spec parser achieving sub-millisecond response times (p95 < 0.1 ms over 50 runs) with a Claude Sonnet 4.6 fallback for unstructured or ambiguous requests; itinerary builder packages results into curated Budget / Best Value / Premium options in under 0.1 ms
-- Built trip monitoring pipeline as a Celery beat hourly job that detects flight schedule changes and price drops across all confirmed bookings and emails users via SendGrid, with mock/live modes mirroring the booking agent pattern
-- Secured the application end-to-end: Fernet-encrypted passport and TSA numbers at the application layer (never stored in plaintext), Stripe Issuing single-use virtual cards generated per booking (automatically voided on failure), and Google OAuth 2.0 via NextAuth 5 with a server-side API key bridge (FastAPI never exposed to the browser)
-- Implemented natural-language trip modification endpoint parsing requests such as "extend my hotel by 2 nights" or "upgrade to business class" with regex-based intent extraction (sub-0.1 ms) and applying changes to confirmed bookings with full mock and partial live support
-- Architected full mock fallback layer for every external service (Amadeus, Anthropic, Stripe, SendGrid, Playwright), enabling the complete booking pipeline — request → parse → search → options → approve → book → confirmation — to run with zero third-party credentials
-
-**Stack:** FastAPI (Python 3.12), Next.js 16 / React 19, PostgreSQL 16, SQLAlchemy + Alembic, Celery 5 + Redis 7, Playwright 1.49, Claude Sonnet 4.6 (Anthropic), Stripe Issuing, SendGrid, NextAuth 5, Tailwind CSS 4, Docker, Vercel (frontend), EC2 (backend)
-
----
-
 ## Metrics suitable as resume bullets (standalone)
 
 The following are concise bullet formats suitable for a resume that has limited space:
